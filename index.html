@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Azota Links Portal (15 môn)</title>
+</head>
+
+<body bgcolor="#0b1220" text="#e6eef8">
+  <center>
+    <h2>AZOTA LINKS PORTAL (MẶC ĐỊNH 15 MÔN)</h2>
+    <p>
+      Cách dùng: sửa link trực tiếp trong bảng → tự lưu. Nút <b>Mở</b> để kiểm tra,
+      <b>Sao chép</b> để gửi nhanh cho học sinh.
+    </p>
+
+    <table border="1" cellpadding="6" cellspacing="0" width="98%">
+      <tr bgcolor="#1f2a44">
+        <th width="50">STT</th>
+        <th width="220">Môn</th>
+        <th>Link Azota</th>
+        <th width="420">Thao tác</th>
+        <th width="140">Trạng thái</th>
+      </tr>
+      <tbody id="tbody"></tbody>
+    </table>
+
+    <br>
+
+    <table border="0" cellpadding="6" cellspacing="0" width="98%">
+      <tr>
+        <td width="33%" valign="top">
+          <b>Thêm môn</b><br><br>
+          Tên môn:
+          <input type="text" id="newSubject" size="28" placeholder="Ví dụ: Toán"><br><br>
+          Link (tùy chọn):
+          <input type="text" id="newLink" size="28" placeholder="https://azota.vn/..."><br><br>
+
+          <input type="button" value="Thêm môn" onclick="addOne()">
+          <input type="button" value="Khôi phục mặc định" onclick="resetDefaults()">
+          <br><br>
+          <input type="button" value="Xuất CSV" onclick="exportCSV()">
+          &nbsp;
+          <input type="file" id="csvFile" accept=".csv" onchange="importCSVFile(this.files)">
+          <br><br>
+          <span id="saveInfo"></span>
+        </td>
+
+        <td valign="top">
+          <b>Dán hàng loạt (mỗi dòng 1 môn)</b><br>
+          <span>(Định dạng: <b>Tên môn | Link</b> &nbsp;hoặc&nbsp; <b>Tên môn</b> thôi cũng được)</span><br><br>
+          <textarea id="bulk" rows="9" cols="70" placeholder="Ví dụ:
+Toán | https://azota.vn/...
+Ngữ văn | https://azota.vn/...
+Tiếng Anh | https://azota.vn/..."></textarea><br><br>
+          <input type="button" value="Nhập / Gộp vào danh sách" onclick="bulkImport()">
+          <input type="button" value="Xóa ô dán" onclick="document.getElementById('bulk').value=''">
+        </td>
+      </tr>
+    </table>
+  </center>
+
+<script>
+  var STORAGE_KEY = "azota_links_v2";
+
+  function defaultData(){
+    return [
+      {id:1,  subject:"Toán",                   link:""},
+      {id:2,  subject:"Ngữ văn",                link:""},
+      {id:3,  subject:"Tiếng Anh",              link:""},
+      {id:4,  subject:"Vật lí",                 link:""},
+      {id:5,  subject:"Hóa học",                link:""},
+      {id:6,  subject:"Sinh học",               link:""},
+      {id:7,  subject:"Lịch sử",                link:""},
+      {id:8,  subject:"Địa lí",                 link:""},
+      {id:9,  subject:"GD Kinh tế & Pháp luật", link:"https://azota.vn/de-thi/kyzbhn"},
+      {id:10, subject:"Tin học",                link:""},
+      {id:11, subject:"Công nghệ",              link:"https://azota.vn/de-thi/mleuco"},
+      {id:12, subject:"GDQP-AN",                link:""},
+      {id:13, subject:"Giáo dục thể chất",      link:""},
+      {id:14, subject:"Mỹ thuật",               link:""},
+      {id:15, subject:"Âm nhạc",                link:""}
+    ];
+  }
+
+  var data = loadData();
+
+  function loadData(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && parsed.length) return normalizeIds(parsed);
+      }
+    }catch(e){}
+    return defaultData();
+  }
+
+  function normalizeIds(list){
+    // đảm bảo id duy nhất + số thứ tự hiển thị theo vị trí mảng
+    var used = {};
+    for(var i=0;i<list.length;i++){
+      if(!list[i].id || used[list[i].id]) list[i].id = (new Date().getTime()) + i;
+      used[list[i].id] = true;
+      if(typeof list[i].subject !== "string") list[i].subject = "";
+      if(typeof list[i].link !== "string") list[i].link = "";
+    }
+    return list;
+  }
+
+  function saveData(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      showSaved("Đã lưu tự động.");
+    }catch(e){
+      showSaved("Không lưu được (trình duyệt chặn localStorage).");
+    }
+  }
+
+  function showSaved(msg){
+    var el = document.getElementById("saveInfo");
+    el.innerHTML = "<b>" + escapeHtml(msg) + "</b>";
+    setTimeout(function(){ el.innerHTML = ""; }, 1200);
+  }
+
+  function escapeHtml(s){
+    s = String(s);
+    return s.replace(/[&<>\"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]);
+    });
+  }
+
+  function normalizeUrl(u){
+    u = (u||"").trim();
+    if(u === "") return "";
+    if(u.indexOf("http://") === 0 || u.indexOf("https://") === 0) return u;
+    return "https://" + u;
+  }
+
+  function isLikelyUrl(u){
+    u = (u||"").trim();
+    if(u === "") return false;
+    // kiểm tra đơn giản: có dấu chấm hoặc chứa azota.vn
+    if(u.indexOf("azota.vn") >= 0) return true;
+    if(u.indexOf(".") >= 0) return true;
+    return false;
+  }
+
+  function statusText(link){
+    link = (link||"").trim();
+    if(link === "") return "Trống";
+    if(isLikelyUrl(link)) return "Có vẻ hợp lệ";
+    return "Không hợp lệ";
+  }
+
+  function render(){
+    var tb = document.getElementById("tbody");
+    tb.innerHTML = "";
+
+    for(var i=0;i<data.length;i++){
+      var item = data[i];
+
+      var tr = document.createElement("tr");
+
+      // STT
+      var td0 = document.createElement("td");
+      td0.align = "center";
+      td0.innerHTML = (i+1);
+      tr.appendChild(td0);
+
+      // Môn
+      var td1 = document.createElement("td");
+      td1.innerHTML =
+        '<input type="text" size="22" value="'+ escapeHtml(item.subject) +'" '+
+        'oninput="onEditSubject('+ i +', this.value)">';
+      tr.appendChild(td1);
+
+      // Link
+      var td2 = document.createElement("td");
+      td2.innerHTML =
+        '<input type="text" size="60" value="'+ escapeHtml(item.link) +'" '+
+        'oninput="onEditLink('+ i +', this.value)">';
+      tr.appendChild(td2);
+
+      // Thao tác
+      var td3 = document.createElement("td");
+      td3.align = "center";
+      td3.innerHTML =
+        '<input type="button" value="Mở" onclick="openLink('+ i +')"> '+
+        '<input type="button" value="Sao chép" onclick="copyLink('+ i +', this)"> '+
+        '<input type="button" value="Lên" onclick="moveUp('+ i +')"> '+
+        '<input type="button" value="Xuống" onclick="moveDown('+ i +')"> '+
+        '<input type="button" value="Xóa" onclick="removeAt('+ i +')">';
+      tr.appendChild(td3);
+
+      // Trạng thái
+      var td4 = document.createElement("td");
+      td4.align = "center";
+      td4.innerHTML = '<span id="st_'+ i +'">'+ escapeHtml(statusText(item.link)) +'</span>';
+      tr.appendChild(td4);
+
+      tb.appendChild(tr);
+    }
+  }
+
+  function onEditSubject(index, val){
+    data[index].subject = (val||"").trim();
+    saveData();
+  }
+
+  function onEditLink(index, val){
+    data[index].link = (val||"").trim();
+    var st = document.getElementById("st_"+index);
+    if(st) st.innerHTML = escapeHtml(statusText(data[index].link));
+    saveData();
+  }
+
+  function openLink(index){
+    var u = normalizeUrl(data[index].link);
+    if(u === ""){
+      alert("Chưa có link.");
+      return;
+    }
+    window.open(u, "_blank");
+  }
+
+  function copyFallback(text){
+    // fallback cho trình duyệt không hỗ trợ clipboard API
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); }catch(e){}
+    document.body.removeChild(ta);
+  }
+
+  function copyLink(index, btn){
+    var u = normalizeUrl(data[index].link);
+    if(u === ""){
+      alert("Chưa có link.");
+      return;
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(u).then(function(){
+        if(btn) btn.value = "Đã sao chép";
+        setTimeout(function(){ if(btn) btn.value="Sao chép"; }, 900);
+      }, function(){
+        copyFallback(u);
+        if(btn) btn.value = "Đã sao chép";
+        setTimeout(function(){ if(btn) btn.value="Sao chép"; }, 900);
+      });
+    }else{
+      copyFallback(u);
+      if(btn) btn.value = "Đã sao chép";
+      setTimeout(function(){ if(btn) btn.value="Sao chép"; }, 900);
+    }
+  }
+
+  function moveUp(index){
+    if(index <= 0) return;
+    var tmp = data[index-1];
+    data[index-1] = data[index];
+    data[index] = tmp;
+    saveData();
+    render();
+  }
+
+  function moveDown(index){
+    if(index >= data.length-1) return;
+    var tmp = data[index+1];
+    data[index+1] = data[index];
+    data[index] = tmp;
+    saveData();
+    render();
+  }
+
+  function removeAt(index){
+    if(!confirm("Xóa môn này khỏi danh sách?")) return;
+    data.splice(index, 1);
+    saveData();
+    render();
+  }
+
+  function addOne(){
+    var name = document.getElementById("newSubject").value.trim();
+    var link = document.getElementById("newLink").value.trim();
+    if(name === ""){
+      alert("Nhập tên môn.");
+      return;
+    }
+    data.push({id:(new Date().getTime()), subject:name, link:link});
+    document.getElementById("newSubject").value = "";
+    document.getElementById("newLink").value = "";
+    saveData();
+    render();
+  }
+
+  function resetDefaults(){
+    if(!confirm("Khôi phục về 15 môn mặc định? (Sẽ ghi đè danh sách đang lưu)")) return;
+    data = defaultData();
+    saveData();
+    render();
+  }
+
+  function exportCSV(){
+    var rows = [];
+    rows.push(["Môn","Link"]);
+    for(var i=0;i<data.length;i++){
+      rows.push([data[i].subject || "", data[i].link || ""]);
+    }
+    // CSV có BOM để Excel đọc tiếng Việt ổn hơn
+    var csv = "\ufeff" + rows.map(function(r){
+      return r.map(function(v){
+        v = String(v||"").replace(/"/g,'""');
+        return '"' + v + '"';
+      }).join(",");
+    }).join("\n");
+
+    var blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "azota-links.csv";
+    a.click();
+  }
+
+  function parseCSV(text){
+    // parser CSV đơn giản (hỗ trợ dấu " ")
+    var lines = text.replace(/\r/g,"").split("\n");
+    var out = [];
+    for(var i=0;i<lines.length;i++){
+      var line = lines[i].trim();
+      if(line === "") continue;
+      out.push(parseCSVLine(line));
+    }
+    return out;
+  }
+
+  function parseCSVLine(line){
+    var res = [];
+    var cur = "";
+    var inQ = false;
+    for(var i=0;i<line.length;i++){
+      var ch = line.charAt(i);
+      if(inQ){
+        if(ch === '"'){
+          if(i+1 < line.length && line.charAt(i+1) === '"'){
+            cur += '"'; i++;
+          }else{
+            inQ = false;
+          }
+        }else{
+          cur += ch;
+        }
+      }else{
+        if(ch === '"'){ inQ = true; }
+        else if(ch === ","){ res.push(cur); cur = ""; }
+        else{ cur += ch; }
+      }
+    }
+    res.push(cur);
+    return res;
+  }
+
+  function importCSVFile(files){
+    if(!files || !files[0]) return;
+    var file = files[0];
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var rows = parseCSV(String(reader.result || ""));
+        // bỏ header nếu có
+        if(rows.length && (rows[0][0]||"").toLowerCase().indexOf("môn") >= 0){
+          rows.shift();
+        }
+        for(var i=0;i<rows.length;i++){
+          var subj = (rows[i][0]||"").trim();
+          var link = (rows[i][1]||"").trim();
+          if(subj === "") continue;
+          upsertBySubject(subj, link);
+        }
+        saveData();
+        render();
+        showSaved("Đã nhập CSV.");
+      }catch(e){
+        alert("Không đọc được CSV.");
+      }
+      document.getElementById("csvFile").value = "";
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  function upsertBySubject(subj, link){
+    // nếu trùng tên môn thì cập nhật link, không trùng thì thêm mới
+    for(var i=0;i<data.length;i++){
+      if((data[i].subject||"").trim().toLowerCase() === subj.trim().toLowerCase()){
+        if(link) data[i].link = link;
+        return;
+      }
+    }
+    data.push({id:(new Date().getTime()) + Math.floor(Math.random()*1000), subject:subj, link:link||""});
+  }
+
+  function bulkImport(){
+    var t = document.getElementById("bulk").value.replace(/\r/g,"").split("\n");
+    var changed = 0;
+
+    for(var i=0;i<t.length;i++){
+      var line = t[i].trim();
+      if(line === "") continue;
+
+      var subj = "";
+      var link = "";
+
+      // hỗ trợ "Tên | Link" hoặc "Tên - Link"
+      if(line.indexOf("|") >= 0){
+        var parts = line.split("|");
+        subj = (parts[0]||"").trim();
+        link = (parts.slice(1).join("|")||"").trim();
+      }else if(line.indexOf("\t") >= 0){
+        var p2 = line.split("\t");
+        subj = (p2[0]||"").trim();
+        link = (p2.slice(1).join("\t")||"").trim();
+      }else{
+        subj = line;
+        link = "";
+      }
+
+      if(subj !== ""){
+        upsertBySubject(subj, link);
+        changed++;
+      }
+    }
+
+    if(changed === 0){
+      alert("Chưa có dòng hợp lệ để nhập.");
+      return;
+    }
+    saveData();
+    render();
+    showSaved("Đã nhập/gộp danh sách.");
+  }
+
+  // init
+  render();
+</script>
+
+</body>
+</html>
