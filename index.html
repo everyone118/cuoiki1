@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Azota Links Portal</title>
+  <style>
+    :root{
+      --bg:#07121f;
+      --panel:rgba(255,255,255,.06);
+      --panel2:rgba(255,255,255,.085);
+      --text:#e6eef8;
+      --muted:#9fb2c8;
+      --line:rgba(255,255,255,.10);
+      --ok:#34d399;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --accent:#4f46e5;
+      --accent2:#22c55e;
+      --shadow: 0 14px 40px rgba(0,0,0,.45);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; color:var(--text);
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+      background:
+        radial-gradient(1200px 800px at 20% 0%, rgba(79,70,229,.35), transparent 55%),
+        radial-gradient(900px 700px at 100% 30%, rgba(34,197,94,.20), transparent 55%),
+        linear-gradient(180deg, #050b14 0%, var(--bg) 65%, #061424 100%);
+      min-height:100vh;
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:14px 14px 30px}
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(5,11,20,.88), rgba(5,11,20,.55));
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .topbar .inner{max-width:1100px;margin:0 auto;padding:12px 14px}
+    h1{margin:0;font-size:18px;letter-spacing:.2px}
+    .lead{margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.35}
+    .controls{
+      display:flex; flex-wrap:wrap; gap:10px;
+      margin-top:10px; align-items:center;
+    }
+    .search{
+      flex:1; min-width:200px;
+      display:flex; gap:8px; align-items:center;
+      background: var(--panel);
+      border:1px solid var(--line);
+      border-radius: 14px;
+      padding:10px 12px;
+    }
+    .search input{
+      width:100%; border:0; outline:0;
+      background:transparent; color:var(--text);
+      font-size:14px;
+    }
+    .chipbar{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{
+      user-select:none;
+      border:1px solid var(--line);
+      background:var(--panel);
+      color:var(--muted);
+      padding:9px 10px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:12px;
+      cursor:pointer;
+    }
+    .chip.active{background:rgba(79,70,229,.22); color:var(--text); border-color:rgba(79,70,229,.45)}
+    .btn{
+      cursor:pointer; border:0;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:800;
+      font-size:13px;
+      color:#fff;
+      background: linear-gradient(180deg, rgba(79,70,229,1), rgba(79,70,229,.82));
+      box-shadow: 0 10px 24px rgba(79,70,229,.22);
+      white-space:nowrap;
+    }
+    .btn.secondary{
+      background:transparent;
+      border:1px solid var(--line);
+      color:var(--muted);
+      box-shadow:none;
+      font-weight:800;
+    }
+    .btn.good{
+      background: linear-gradient(180deg, rgba(34,197,94,1), rgba(34,197,94,.78));
+      box-shadow: 0 10px 24px rgba(34,197,94,.18);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+      gap:12px;
+      padding-top:14px;
+    }
+    .card{
+      background: linear-gradient(180deg, var(--panel2), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.09);
+      border-radius: var(--radius);
+      padding:12px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .cardhead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:10px;
+    }
+    .index{
+      width:34px;height:34px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      font-weight:900;
+    }
+    .status{
+      font-size:12px; font-weight:900;
+      padding:7px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--muted);
+      background:rgba(0,0,0,.12);
+      white-space:nowrap;
+    }
+    .status.ok{color:#062b1a;background:rgba(52,211,153,.95);border-color:rgba(52,211,153,.55)}
+    .status.warn{color:#2a1b00;background:rgba(251,191,36,.95);border-color:rgba(251,191,36,.55)}
+    .status.bad{color:#2a0010;background:rgba(251,113,133,.95);border-color:rgba(251,113,133,.55)}
+
+    .field{display:flex; flex-direction:column; gap:6px; margin-bottom:10px}
+    .label{font-size:12px; color:var(--muted); font-weight:800}
+    .input{
+      width:100%;
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.12);
+      color:var(--text);
+      outline:none;
+      font-size:14px;
+    }
+    .row{
+      display:flex; gap:8px; flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .mini{
+      flex:1;
+      min-width:92px;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      font-weight:900;
+      cursor:pointer;
+    }
+    .mini.primary{background:rgba(79,70,229,.24); border-color:rgba(79,70,229,.45)}
+    .mini.good{background:rgba(34,197,94,.22); border-color:rgba(34,197,94,.40)}
+    .mini.danger{background:rgba(251,113,133,.16); border-color:rgba(251,113,133,.35); color:#ffd1da}
+    .mini.dim{color:var(--muted)}
+    .hint{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.35}
+
+    details{
+      margin-top:14px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      padding:10px 12px;
+    }
+    summary{cursor:pointer; font-weight:900}
+    textarea{
+      width:100%;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.12);
+      color:var(--text);
+      outline:none;
+      font-size:14px;
+      resize:vertical;
+      min-height:110px;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%; bottom:18px;
+      transform:translateX(-50%);
+      background:rgba(0,0,0,.72);
+      border:1px solid rgba(255,255,255,.15);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:13px;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .18s ease;
+      max-width:92vw;
+      text-align:center;
+    }
+    .toast.show{opacity:1}
+
+    .footer{
+      margin-top:18px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+    }
+
+    @media (max-width:520px){
+      .wrap{padding:10px 10px 26px}
+      .topbar .inner{padding:10px 10px}
+      .btn{padding:10px 11px}
+      .grid{grid-template-columns:1fr}
+      h1{font-size:16px}
+      .lead{font-size:12px}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="inner">
+      <h1>Azota Links Portal</h1>
+      <div class="lead">Tập trung link Azota theo môn/bài. Tự lưu trên thiết bị. Dùng tốt trên điện thoại.</div>
+
+      <div class="controls">
+        <div class="search">
+          <span style="font-weight:900;color:var(--muted)">🔎</span>
+          <input id="q" type="text" placeholder="Tìm môn / bài / azota.vn ...">
+        </div>
+
+        <div class="chipbar" id="chips">
+          <div class="chip active" data-filter="all">Tất cả</div>
+          <div class="chip" data-filter="empty">Chưa có link</div>
+          <div class="chip" data-filter="azota">Chỉ azota.vn</div>
+        </div>
+
+        <button class="btn good" id="btnAdd">+ Thêm</button>
+        <button class="btn secondary" id="btnExport">Xuất CSV</button>
+        <label class="btn secondary" style="display:inline-flex;align-items:center;gap:8px">
+          Nhập CSV
+          <input id="csvFile" type="file" accept=".csv" style="display:none">
+        </label>
+        <button class="btn secondary" id="btnReset">Reset 15 môn</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="grid" id="grid"></div>
+
+    <details>
+      <summary>Dán hàng loạt (mỗi dòng 1 môn)</summary>
+      <div class="hint">Định dạng: <b>Tên môn | Link</b> (hoặc chỉ <b>Tên môn</b>). Có thể dán nhiều dòng một lần.</div>
+      <textarea id="bulk" placeholder="Ví dụ:
+Lịch sử bài 9 | https://azota.vn/de-thi/xxxxx
+Địa lí | https://azota.vn/de-thi/yyyyy
+Toán"></textarea>
+      <div class="row">
+        <button class="btn good" id="btnBulk">Nhập / Gộp</button>
+        <button class="btn secondary" id="btnBulkClear">Xóa ô dán</button>
+      </div>
+    </details>
+
+    <div class="footer">
+      Mẹo dùng trên điện thoại: bấm <b>Sao chép</b> để gửi nhanh vào Zalo/Chat; bấm <b>Mở</b> để kiểm tra link.
+      Nếu iPhone chặn “clipboard”, trang sẽ tự dùng cách sao chép dự phòng.
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Đã lưu</div>
+
+<script>
+  var STORAGE_KEY = "azota_links_mobile_v1";
+
+  function defaultData(){
+    return [
+      {id:1,  subject:"Toán",                link:""},
+      {id:2,  subject:"Ngữ văn",             link:""},
+      {id:3,  subject:"Lịch sử bài 8-Đ/s",   link:"https://azota.vn/de-thi/wszajy"},
+      {id:4,  subject:"Lịch sử bài 7-Đ/s",   link:"https://azota.vn/de-thi/vhkf2d"},
+      {id:5,  subject:"Lịch sử bài 8",       link:"https://azota.vn/de-thi/d8kfwp"},
+      {id:6,  subject:"Lịch sử-bài 7",       link:"https://azota.vn/de-thi/8cqlzm"},
+      {id:7,  subject:"Lịch sử-bài 6",       link:"https://azota.vn/de-thi/qihtbc"},
+      {id:8,  subject:"Địa lí",              link:""},
+      {id:9,  subject:"GD Kinh tế & Pháp luật", link:"https://azota.vn/de-thi/kyzbhn"},
+      {id:10, subject:"Tin học",             link:""},
+      {id:11, subject:"Công nghệ",           link:"https://azota.vn/de-thi/mleuco"},
+      {id:12, subject:"GDQP-AN",             link:"https://azota.vn/de-thi/gov9mm"},
+      {id:13, subject:"Giáo dục thể chất",   link:""},
+      {id:14, subject:"Mỹ thuật",            link:""},
+      {id:15, subject:"Âm nhạc",             link:""}
+    ];
+  }
+
+  function normalizeUrl(u){
+    u = (u||"").trim();
+    if(u==="") return "";
+    if(u.indexOf("http://")===0 || u.indexOf("https://")===0) return u;
+    return "https://" + u;
+  }
+
+  function isLikelyUrl(u){
+    u = (u||"").trim();
+    if(u==="") return false;
+    if(u.indexOf("azota.vn")>=0) return true;
+    if(u.indexOf(".")>=0) return true;
+    return false;
+  }
+
+  function getStatus(u){
+    u = (u||"").trim();
+    if(u==="") return {text:"Trống", cls:"warn"};
+    if(u.indexOf("azota.vn")>=0) return {text:"Azota OK", cls:"ok"};
+    if(isLikelyUrl(u)) return {text:"Có vẻ hợp lệ", cls:"ok"};
+    return {text:"Không hợp lệ", cls:"bad"};
+  }
+
+  function escapeHtml(s){
+    s = String(s);
+    return s.replace(/[&<>\"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]);
+    });
+  }
+
+  function loadData(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && parsed.length) return normalizeIds(parsed);
+      }
+    }catch(e){}
+    return defaultData();
+  }
+
+  function normalizeIds(list){
+    var used = {};
+    for(var i=0;i<list.length;i++){
+      if(!list[i].id || used[list[i].id]) list[i].id = Date.now() + i;
+      used[list[i].id] = true;
+      if(typeof list[i].subject!=="string") list[i].subject="";
+      if(typeof list[i].link!=="string") list[i].link="";
+    }
+    return list;
+  }
+
+  var data = loadData();
+
+  // debounce save để đỡ ghi localStorage liên tục khi gõ
+  var saveTimer = null;
+  function saveDataDebounced(){
+    if(saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        toast("Đã lưu tự động");
+      }catch(e){
+        toast("Không lưu được (trình duyệt chặn lưu)");
+      }
+    }, 220);
+  }
+
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.innerHTML = escapeHtml(msg);
+    t.className = "toast show";
+    setTimeout(function(){ t.className = "toast"; }, 1100);
+  }
+
+  // UI state
+  var filterMode = "all";
+  var query = "";
+
+  var grid = document.getElementById("grid");
+
+  function passesFilter(item){
+    var s = (item.subject||"").toLowerCase();
+    var l = (item.link||"").toLowerCase();
+    var q = query.trim().toLowerCase();
+    if(q){
+      if(s.indexOf(q)<0 && l.indexOf(q)<0) return false;
+    }
+    if(filterMode==="empty"){
+      return (item.link||"").trim()==="";
+    }
+    if(filterMode==="azota"){
+      return (item.link||"").indexOf("azota.vn")>=0;
+    }
+    return true;
+  }
+
+  function render(){
+    grid.innerHTML = "";
+    var frag = document.createDocumentFragment();
+
+    var shownIndex = 0;
+    for(var i=0;i<data.length;i++){
+      var item = data[i];
+      if(!passesFilter(item)) continue;
+      shownIndex++;
+
+      var st = getStatus(item.link);
+
+      var card = document.createElement("div");
+      card.className = "card";
+      card.setAttribute("data-i", i);
+
+      card.innerHTML =
+        '<div class="cardhead">'+
+          '<div class="index">'+ shownIndex +'</div>'+
+          '<div class="status '+ st.cls +'">'+ escapeHtml(st.text) +'</div>'+
+        '</div>'+
+
+        '<div class="field">'+
+          '<div class="label">Môn / Bài</div>'+
+          '<input class="input subj" type="text" value="'+ escapeHtml(item.subject) +'" placeholder="Ví dụ: Lịch sử bài 9">'+
+        '</div>'+
+
+        '<div class="field">'+
+          '<div class="label">Link Azota</div>'+
+          '<input class="input link" type="text" value="'+ escapeHtml(item.link) +'" placeholder="https://azota.vn/...">'+
+        '</div>'+
+
+        '<div class="row">'+
+          '<button class="mini primary" data-act="open">Mở</button>'+
+          '<button class="mini good" data-act="copy">Sao chép</button>'+
+          '<button class="mini dim" data-act="up">Lên</button>'+
+          '<button class="mini dim" data-act="down">Xuống</button>'+
+          '<button class="mini danger" data-act="del">Xóa</button>'+
+        '</div>'+
+
+        '<div class="hint">Gợi ý: dán link vào ô Link, trang sẽ tự lưu.</div>';
+
+      frag.appendChild(card);
+    }
+
+    grid.appendChild(frag);
+
+    if(shownIndex===0){
+      var empty = document.createElement("div");
+      empty.className = "card";
+      empty.innerHTML = '<b>Không có kết quả.</b><div class="hint">Thử bỏ lọc hoặc xóa chữ tìm kiếm.</div>';
+      grid.appendChild(empty);
+    }
+  }
+
+  // Event delegation cho click
+  grid.addEventListener("click", function(e){
+    var btn = e.target;
+    if(!btn || !btn.getAttribute) return;
+    var act = btn.getAttribute("data-act");
+    if(!act) return;
+
+    var card = btn.closest(".card");
+    if(!card) return;
+    var i = parseInt(card.getAttribute("data-i"), 10);
+    if(isNaN(i)) return;
+
+    if(act==="open") openLink(i);
+    if(act==="copy") copyLink(i);
+    if(act==="up") moveUp(i);
+    if(act==="down") moveDown(i);
+    if(act==="del") removeAt(i);
+  });
+
+  // Live edit inputs
+  grid.addEventListener("input", function(e){
+    var el = e.target;
+    if(!el || !el.classList) return;
+
+    var card = el.closest(".card");
+    if(!card) return;
+    var i = parseInt(card.getAttribute("data-i"), 10);
+    if(isNaN(i)) return;
+
+    if(el.classList.contains("subj")){
+      data[i].subject = (el.value||"").trim();
+      saveDataDebounced();
+    }
+    if(el.classList.contains("link")){
+      data[i].link = (el.value||"").trim();
+      saveDataDebounced();
+
+      // cập nhật trạng thái ngay
+      var st = getStatus(data[i].link);
+      var stEl = card.querySelector(".status");
+      stEl.className = "status " + st.cls;
+      stEl.textContent = st.text;
+    }
+  });
+
+  function openLink(i){
+    var u = normalizeUrl(data[i].link);
+    if(u===""){ alert("Chưa có link."); return; }
+    window.open(u, "_blank");
+  }
+
+  function copyFallback(text){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); }catch(e){}
+    document.body.removeChild(ta);
+  }
+
+  function copyLink(i){
+    var u = normalizeUrl(data[i].link);
+    if(u===""){ alert("Chưa có link."); return; }
+
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(u).then(function(){
+        toast("Đã sao chép");
+      }, function(){
+        copyFallback(u);
+        toast("Đã sao chép");
+      });
+    }else{
+      copyFallback(u);
+      toast("Đã sao chép");
+    }
+  }
+
+  function moveUp(i){
+    if(i<=0) return;
+    var t = data[i-1]; data[i-1]=data[i]; data[i]=t;
+    saveDataDebounced();
+    render();
+  }
+
+  function moveDown(i){
+    if(i>=data.length-1) return;
+    var t = data[i+1]; data[i+1]=data[i]; data[i]=t;
+    saveDataDebounced();
+    render();
+  }
+
+  function removeAt(i){
+    if(!confirm("Xóa môn/bài này khỏi danh sách?")) return;
+    data.splice(i,1);
+    saveDataDebounced();
+    render();
+  }
+
+  function addOne(subject, link){
+    subject = (subject||"").trim();
+    link = (link||"").trim();
+    if(subject===""){ alert("Nhập tên môn/bài."); return; }
+    data.push({id:Date.now()+Math.floor(Math.random()*1000), subject:subject, link:link});
+    saveDataDebounced();
+    render();
+    toast("Đã thêm");
+  }
+
+  function resetDefaults(){
+    if(!confirm("Khôi phục về 15 môn mặc định? (sẽ ghi đè danh sách đang lưu)")) return;
+    data = defaultData();
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
+    render();
+    toast("Đã reset");
+  }
+
+  // CSV export/import
+  function exportCSV(){
+    var rows = [["Môn","Link"]];
+    for(var i=0;i<data.length;i++){
+      rows.push([data[i].subject||"", data[i].link||""]);
+    }
+    var csv = "\ufeff" + rows.map(function(r){
+      return r.map(function(v){
+        v = String(v||"").replace(/"/g,'""');
+        return '"' + v + '"';
+      }).join(",");
+    }).join("\n");
+
+    var blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "azota-links.csv";
+    a.click();
+    toast("Đã xuất CSV");
+  }
+
+  function parseCSVLine(line){
+    var res = [], cur = "", inQ = false;
+    for(var i=0;i<line.length;i++){
+      var ch = line.charAt(i);
+      if(inQ){
+        if(ch === '"'){
+          if(i+1 < line.length && line.charAt(i+1) === '"'){ cur += '"'; i++; }
+          else inQ = false;
+        }else cur += ch;
+      }else{
+        if(ch === '"') inQ = true;
+        else if(ch === ','){ res.push(cur); cur = ""; }
+        else cur += ch;
+      }
+    }
+    res.push(cur);
+    return res;
+  }
+
+  function importCSVText(text){
+    text = String(text||"").replace(/\r/g,"");
+    var lines = text.split("\n");
+    var count = 0;
+
+    // bỏ header nếu có
+    if(lines.length && (lines[0]||"").toLowerCase().indexOf("môn")>=0) lines.shift();
+
+    for(var i=0;i<lines.length;i++){
+      var line = (lines[i]||"").trim();
+      if(line==="") continue;
+      var row = parseCSVLine(line);
+      var subj = (row[0]||"").trim();
+      var link = (row[1]||"").trim();
+      if(subj==="") continue;
+      upsertBySubject(subj, link);
+      count++;
+    }
+
+    saveDataDebounced();
+    render();
+    toast("Đã nhập CSV ("+count+" dòng)");
+  }
+
+  function upsertBySubject(subj, link){
+    var key = subj.trim().toLowerCase();
+    for(var i=0;i<data.length;i++){
+      if((data[i].subject||"").trim().toLowerCase() === key){
+        if(link) data[i].link = link;
+        return;
+      }
+    }
+    data.push({id:Date.now()+Math.floor(Math.random()*1000), subject:subj, link:link||""});
+  }
+
+  function bulkImport(text){
+    text = String(text||"").replace(/\r/g,"");
+    var lines = text.split("\n");
+    var changed = 0;
+
+    for(var i=0;i<lines.length;i++){
+      var line = (lines[i]||"").trim();
+      if(line==="") continue;
+
+      var subj = "", link = "";
+
+      if(line.indexOf("|")>=0){
+        var parts = line.split("|");
+        subj = (parts[0]||"").trim();
+        link = (parts.slice(1).join("|")||"").trim();
+      }else if(line.indexOf("\t")>=0){
+        var p2 = line.split("\t");
+        subj = (p2[0]||"").trim();
+        link = (p2.slice(1).join("\t")||"").trim();
+      }else{
+        subj = line; link = "";
+      }
+
+      if(subj!==""){
+        upsertBySubject(subj, link);
+        changed++;
+      }
+    }
+
+    saveDataDebounced();
+    render();
+    toast("Đã nhập/gộp ("+changed+" dòng)");
+  }
+
+  // Top controls wiring
+  document.getElementById("q").addEventListener("input", function(){
+    query = this.value || "";
+    render();
+  });
+
+  document.getElementById("chips").addEventListener("click", function(e){
+    var chip = e.target.closest(".chip");
+    if(!chip) return;
+    var mode = chip.getAttribute("data-filter");
+    if(!mode) return;
+    filterMode = mode;
+
+    var all = document.querySelectorAll(".chip");
+    for(var i=0;i<all.length;i++) all[i].classList.remove("active");
+    chip.classList.add("active");
+    render();
+  });
+
+  document.getElementById("btnAdd").addEventListener("click", function(){
+    var name = prompt("Nhập tên môn/bài (bắt buộc):");
+    if(name===null) return;
+    name = (name||"").trim();
+    if(name===""){ alert("Tên môn/bài không được trống."); return; }
+    var link = prompt("Dán link Azota (có thể bỏ trống):", "https://azota.vn/");
+    if(link===null) link = "";
+    addOne(name, link);
+  });
+
+  document.getElementById("btnExport").addEventListener("click", exportCSV);
+
+  document.getElementById("btnReset").addEventListener("click", resetDefaults);
+
+  document.getElementById("csvFile").addEventListener("change", function(){
+    if(!this.files || !this.files[0]) return;
+    var f = this.files[0];
+    var reader = new FileReader();
+    reader.onload = function(){ importCSVText(reader.result||""); };
+    reader.readAsText(f, "utf-8");
+    this.value = "";
+  });
+
+  document.getElementById("btnBulk").addEventListener("click", function(){
+    var t = document.getElementById("bulk").value || "";
+    if(t.trim()===""){ alert("Chưa có nội dung để nhập."); return; }
+    bulkImport(t);
+  });
+
+  document.getElementById("btnBulkClear").addEventListener("click", function(){
+    document.getElementById("bulk").value = "";
+    toast("Đã xóa ô dán");
+  });
+
+  // init
+  render();
+</script>
+</body>
+</html>
